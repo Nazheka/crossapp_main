@@ -1,0 +1,2 @@
+C:/subjects/CrossPlatform/calorietracker_flutter_new/FoodScanAI/android/app/.cxx/Debug/5a6u5d5c/x86/CMakeFiles/edit_cache.dir
+C:/subjects/CrossPlatform/calorietracker_flutter_new/FoodScanAI/android/app/.cxx/Debug/5a6u5d5c/x86/CMakeFiles/rebuild_cache.dir

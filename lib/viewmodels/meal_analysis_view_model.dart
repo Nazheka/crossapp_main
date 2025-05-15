@@ -5,13 +5,15 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:read_the_label/models/food_item.dart';
 import 'package:read_the_label/repositories/ai_repository.dart';
+import 'package:read_the_label/services/connectivity_service.dart';
 import 'package:read_the_label/viewmodels/base_view_model.dart';
 import 'package:read_the_label/viewmodels/ui_view_model.dart';
 
 class MealAnalysisViewModel extends BaseViewModel {
   // Dependencies
-  AiRepository aiRepository;
-  UiViewModel uiProvider;
+  final AiRepository aiRepository;
+  final UiViewModel uiProvider;
+  final ConnectivityService connectivityService;
 
   // Properties
   File? _foodImage;
@@ -29,6 +31,7 @@ class MealAnalysisViewModel extends BaseViewModel {
   MealAnalysisViewModel({
     required this.aiRepository,
     required this.uiProvider,
+    required this.connectivityService,
   });
 
   void setFoodImage(File imageFile) {
@@ -53,6 +56,11 @@ class MealAnalysisViewModel extends BaseViewModel {
   Future<String> analyzeFoodImage({
     required File imageFile,
   }) async {
+    if (!await connectivityService.isConnected()) {
+      setError("No internet connection. Please connect to the internet to analyze food images.");
+      return "No internet connection";
+    }
+
     uiProvider.setLoading(true);
 
     try {
@@ -120,6 +128,11 @@ class MealAnalysisViewModel extends BaseViewModel {
   Future<String> logMealViaText({
     required String foodItemsText,
   }) async {
+    if (!await connectivityService.isConnected()) {
+      setError("No internet connection. Please connect to the internet to analyze food text.");
+      return "No internet connection";
+    }
+
     uiProvider.setLoading(true);
 
     try {
