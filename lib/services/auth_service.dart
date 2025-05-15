@@ -47,11 +47,14 @@ class AuthService {
 
   Future<bool> login(String email, String password) async {
     final users = await getRegisteredUsers();
-    final user = users.firstWhere(
-      (user) => user.email == email && user.password == password,
-      orElse: () => throw Exception('User not found'),
-    );
-
+    User? user;
+    for (final u in users) {
+      if (u.email == email && u.password == password) {
+        user = u;
+        break;
+      }
+    }
+    if (user == null) return false;
     await _prefs.setString(_userKey, jsonEncode(user.toJson()));
     return true;
   }

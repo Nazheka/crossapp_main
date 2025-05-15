@@ -51,38 +51,45 @@ class _DailyIntakePageState extends State<DailyIntakePage> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      physics: const BouncingScrollPhysics(),
-      child: Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).padding.bottom + 80,
-          top: MediaQuery.of(context).padding.top + 10,
+    return RefreshIndicator(
+      onRefresh: () async {
+        final dailyIntakeProvider = Provider.of<DailyIntakeViewModel>(context, listen: false);
+        await dailyIntakeProvider.loadFoodHistory();
+        await dailyIntakeProvider.loadDailyIntake(_selectedDate);
+      },
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 80,
+            top: MediaQuery.of(context).padding.top + 10,
+          ),
+          child: Consumer<DailyIntakeViewModel>(
+              builder: (context, dailyIntakeProvider, _) {
+            return Column(
+              children: [
+                HeaderCard(context, _selectedDate),
+                DateSelector(
+                  context,
+                  _selectedDate,
+                  (DateTime newDate) {
+                    setState(() {
+                      _selectedDate = newDate;
+                      dailyIntakeProvider.loadDailyIntake(newDate);
+                    });
+                  },
+                ),
+                MacronutrientSummaryCard(
+                    context, dailyIntakeProvider.dailyIntake),
+                FoodHistoryCard(
+                    context: context,
+                    currentIndex: 2,
+                    selectedDate: _selectedDate),
+                DetailedNutrientsCard(context, dailyIntakeProvider.dailyIntake),
+              ],
+            );
+          }),
         ),
-        child: Consumer<DailyIntakeViewModel>(
-            builder: (context, dailyIntakeProvider, _) {
-          return Column(
-            children: [
-              HeaderCard(context, _selectedDate),
-              DateSelector(
-                context,
-                _selectedDate,
-                (DateTime newDate) {
-                  setState(() {
-                    _selectedDate = newDate;
-                    dailyIntakeProvider.loadDailyIntake(newDate);
-                  });
-                },
-              ),
-              MacronutrientSummaryCard(
-                  context, dailyIntakeProvider.dailyIntake),
-              FoodHistoryCard(
-                  context: context,
-                  currentIndex: 2,
-                  selectedDate: _selectedDate),
-              DetailedNutrientsCard(context, dailyIntakeProvider.dailyIntake),
-            ],
-          );
-        }),
       ),
     );
   }

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:read_the_label/services/auth_service.dart';
 import 'package:read_the_label/services/connectivity_service.dart';
+import 'package:read_the_label/services/pin_service.dart';
 import 'package:read_the_label/viewmodels/base_view_model.dart';
 
 class AuthViewModel extends BaseViewModel {
   final AuthService _authService;
   final ConnectivityService _connectivityService;
+  PinService? _pinService;
+
+  set pinService(PinService service) => _pinService = service;
 
   AuthViewModel(this._authService, this._connectivityService);
 
@@ -52,7 +56,11 @@ class AuthViewModel extends BaseViewModel {
     }
 
     try {
+      final user = await _authService.getCurrentUser();
       await _authService.logout();
+      if (_pinService != null && user != null && !(user.isGuest)) {
+        await _pinService!.removePin(user.id ?? '');
+      }
       return true;
     } catch (e) {
       setError(e.toString());

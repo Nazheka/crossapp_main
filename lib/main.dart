@@ -26,6 +26,47 @@ import 'package:read_the_label/viewmodels/language_view_model.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:read_the_label/l10n/app_localizations.dart';
 import 'package:read_the_label/l10n/app_localizations_delegate.dart';
+import 'package:read_the_label/services/pin_service.dart';
+import 'package:read_the_label/viewmodels/pin_view_model.dart';
+import 'package:read_the_label/views/screens/pin_verification_screen.dart';
+
+class MyAppLoader extends StatelessWidget {
+  final ThemeService themeService;
+  final LanguageService languageService;
+  final PinService pinService;
+
+  const MyAppLoader({
+    super.key,
+    required this.themeService,
+    required this.languageService,
+    required this.pinService,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final authService = Provider.of<AuthService>(context, listen: false);
+    return FutureBuilder(
+      future: authService.getCurrentUser(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const MaterialApp(
+            home: Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            ),
+          );
+        }
+        final user = snapshot.data;
+        final userId = user?.id ?? 'guest';
+        return MyApp(
+          userId: userId,
+          themeService: themeService,
+          languageService: languageService,
+          pinService: pinService,
+        );
+      },
+    );
+  }
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,6 +91,9 @@ Future<void> main() async {
         ),
         Provider<AuthService>(
           create: (_) => AuthService(prefs),
+        ),
+        Provider<PinService>(
+          create: (_) => PinService(prefs),
         ),
         Provider<ConnectivityService>(
           create: (_) => ConnectivityService(),
@@ -96,20 +140,33 @@ Future<void> main() async {
               previous!..uiProvider = uiViewModel,
         ),
       ],
-      child: MyApp(),
+      child: Builder(
+        builder: (context) => MyAppLoader(
+          themeService: context.read<ThemeService>(),
+          languageService: context.read<LanguageService>(),
+          pinService: context.read<PinService>(),
+        ),
+      ),
     ),
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final String userId;
+  final ThemeService themeService;
+  final LanguageService languageService;
+  final PinService pinService;
+
+  const MyApp({
+    super.key,
+    required this.userId,
+    required this.themeService,
+    required this.languageService,
+    required this.pinService,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Get userId (replace with actual logic if needed)
-    final userId = 'guest';
-    final themeService = Provider.of<ThemeService>(context, listen: false);
-    final languageService = Provider.of<LanguageService>(context, listen: false);
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(
@@ -118,9 +175,22 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => LanguageViewModel(languageService, userId),
         ),
+        ChangeNotifierProvider(
+          create: (_) => PinViewModel(pinService, userId),
+        ),
+        ChangeNotifierProvider<AuthViewModel>(
+          create: (context) {
+            final authVM = AuthViewModel(
+              Provider.of<AuthService>(context, listen: false),
+              Provider.of<ConnectivityService>(context, listen: false),
+            );
+            authVM.pinService = pinService;
+            return authVM;
+          },
+        ),
       ],
-      child: Consumer2<ThemeViewModel, LanguageViewModel>(
-        builder: (context, themeVM, languageVM, _) {
+      child: Consumer3<ThemeViewModel, LanguageViewModel, PinViewModel>(
+        builder: (context, themeVM, languageVM, pinVM, _) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
             theme: ThemeData.light().copyWith(
@@ -156,19 +226,9 @@ class MyApp extends StatelessWidget {
               GlobalWidgetsLocalizations.delegate,
               GlobalCupertinoLocalizations.delegate,
             ],
-            home: FutureBuilder<bool>(
-              future: Provider.of<AuthService>(context, listen: false).isLoggedIn(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    body: Center(
-                      child: CircularProgressIndicator(),
-                    ),
-                  );
-                }
-                return snapshot.data == true ? const HomePage() : const AuthPage();
-              },
-            ),
+            home: pinVM.isPinEnabled
+                ? const PinVerificationScreen()
+                : const HomePage(),
             routes: {
               '/home': (context) => const HomePage(),
               '/auth': (context) => const AuthPage(),

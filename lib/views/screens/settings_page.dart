@@ -3,8 +3,10 @@ import 'package:provider/provider.dart';
 import 'package:read_the_label/theme/app_theme.dart';
 import 'package:read_the_label/views/screens/profile_page.dart';
 import 'package:read_the_label/views/screens/privacy_page.dart';
+import 'package:read_the_label/views/screens/pin_setup_screen.dart';
 import 'package:read_the_label/viewmodels/theme_view_model.dart';
 import 'package:read_the_label/viewmodels/language_view_model.dart';
+import 'package:read_the_label/viewmodels/pin_view_model.dart';
 import 'package:read_the_label/services/language_service.dart';
 import 'package:read_the_label/l10n/app_localizations.dart';
 
@@ -15,6 +17,7 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final themeVM = Provider.of<ThemeViewModel>(context);
     final languageVM = Provider.of<LanguageViewModel>(context);
+    final pinVM = Provider.of<PinViewModel>(context);
     final l10n = AppLocalizations.of(context);
 
     return SingleChildScrollView(
@@ -85,6 +88,35 @@ class SettingsPage extends StatelessWidget {
                       // TODO: Implement notifications toggle
                     },
                   ),
+                ),
+              ],
+            ),
+            _buildSettingsSection(
+              context,
+              l10n.security,
+              [
+                Consumer<PinViewModel>(
+                  builder: (context, pinVM, _) {
+                    return _buildSettingsTile(
+                      context,
+                      l10n.pinCode,
+                      Icons.lock,
+                      trailing: Switch(
+                        value: pinVM.isPinEnabled,
+                        onChanged: (value) {
+                          if (value) {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => const PinSetupScreen(),
+                              ),
+                            );
+                          } else {
+                            pinVM.removePin();
+                          }
+                        },
+                      ),
+                    );
+                  },
                 ),
               ],
             ),

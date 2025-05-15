@@ -21,8 +21,11 @@ class ProfilePage extends StatelessWidget {
         }
         final user = snapshot.data;
         if (user == null) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, '/auth');
+          });
           return const Scaffold(
-            body: Center(child: Text('No user found.')),
+            body: Center(child: CircularProgressIndicator()),
           );
         }
         return Scaffold(
